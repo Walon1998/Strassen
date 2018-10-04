@@ -1,7 +1,6 @@
 #include<bits/stdc++.h>
 #include<eigen3/Eigen/Dense>
 
-void mult_rec_helper(MatrixXf &matrix, MatrixXf &matrix1, MatrixXf c, int i, int i1, int i2);
 
 using namespace std;
 using namespace Eigen;
@@ -23,54 +22,109 @@ MatrixXf mult(const MatrixXf &A, const MatrixXf &B) {
     return C;
 }
 
-MatrixXf mult_rec(MatrixXf &A,MatrixXf &B) {
-    int N = A.rows();
-    MatrixXf C = MatrixXf::Zero(N, N);
+MatrixXf mult_rec_helper(MatrixXf A, MatrixXf B) {
+    if (A.rows() == 1) {
+        return A * B;
+
+    } else {
+        int half = A.rows() / 2;
 
 
-     mult_rec_helper(A,B,C,0,0,0);
-}
+        MatrixXf A11 = A.block(0, 0, half, half);
+        MatrixXf A12 = A.block(0, half, half, half);
+        MatrixXf A21 = A.block(half, 0, half, half);
+        MatrixXf A22 = A.block(half, half, half, half);
 
-void mult_rec_helper(MatrixXf &A, MatrixXf &B, MatrixXf C, int i, int j, int k) {
-    if(A.rows()==1){
-        C(i,j)=A(i,k)*B(k,j);
+        MatrixXf B11 = B.block(0, 0, half, half);
+        MatrixXf B12 = B.block(0, half, half, half);
+        MatrixXf B21 = B.block(half, 0, half, half);
+        MatrixXf B22 = B.block(half, half, half, half);
 
-    }else{
-        int half = A.rows()/2;
-        mult_rec_helper(A.block(0,0,half,half), B.block(), MatrixXf C, int i, int j, int k);
-        mult_rec_helper(MatrixXf &A, MatrixXf &B, MatrixXf C, int i, int j, int k);
-        mult_rec_helper(MatrixXf &A, MatrixXf &B, MatrixXf C, int i, int j, int k);
-        mult_rec_helper(MatrixXf &A, MatrixXf &B, MatrixXf C, int i, int j, int k);
+
+        MatrixXf C11 = mult_rec_helper(A11, B11) + mult_rec_helper(A12, B21);
+        MatrixXf C12 = mult_rec_helper(A11, B12) + mult_rec_helper(A12, B22);
+        MatrixXf C21 = mult_rec_helper(A21, B11) + mult_rec_helper(A22, B21);
+        MatrixXf C22 = mult_rec_helper(A21, B12) + mult_rec_helper(A22, B22);
+
+
+        MatrixXf C = MatrixXf::Zero(A.rows(), A.cols());
+        C.block(0, 0, half, half) = C11;
+        C.block(0, half, half, half) = C12;
+        C.block(half, 0, half, half) = C21;
+        C.block(half, half, half, half) = C22;
+
+        return C;
 
 
     }
 
 }
 
+MatrixXf mult_rec(MatrixXf &A, MatrixXf &B) {
+    int N = A.rows();
+    MatrixXf C = MatrixXf::Zero(N, N);
+    C = mult_rec_helper(A, B);
+//    cout << C << endl;
+    return C;
+}
+
+MatrixXf strassen_helper(MatrixXf A, MatrixXf B) {
+    if (A.rows() == 1) {
+        return A * B;
+
+    } else {
+        int half = A.rows() / 2;
 
 
+        MatrixXf A11 = A.block(0, 0, half, half);
+        MatrixXf A12 = A.block(0, half, half, half);
+        MatrixXf A21 = A.block(half, 0, half, half);
+        MatrixXf A22 = A.block(half, half, half, half);
 
+        MatrixXf B11 = B.block(0, 0, half, half);
+        MatrixXf B12 = B.block(0, half, half, half);
+        MatrixXf B21 = B.block(half, 0, half, half);
+        MatrixXf B22 = B.block(half, half, half, half);
+
+
+        MatrixXf M1 = strassen_helper((A11 + A22), (B11 + B22));
+        MatrixXf M2 = strassen_helper((A21 + A22), B11);
+        MatrixXf M3 = strassen_helper((A11), (B12 - B22));
+        MatrixXf M4 = strassen_helper((A22), (B21 - B11));
+        MatrixXf M5 = strassen_helper((A11 + A12), (B22));
+        MatrixXf M6 = strassen_helper((A21 - A11), (B11 + B12));
+        MatrixXf M7 = strassen_helper((A12 - A22), (B21 + B22));
+
+
+        MatrixXf C11 = M1 + M4 - M5 + M7;
+        MatrixXf C12 = M3 + M5;
+        MatrixXf C21 = M2 + M4;
+        MatrixXf C22 = M1 - M2 + M3 + M6;
+
+
+        MatrixXf C = MatrixXf::Zero(A.rows(), A.cols());
+        C.block(0, 0, half, half) = C11;
+        C.block(0, half, half, half) = C12;
+        C.block(half, 0, half, half) = C21;
+        C.block(half, half, half, half) = C22;
+
+        return C;
+
+
+    }
+}
 MatrixXf strassen(const MatrixXf &A, const MatrixXf &B) {
     int N = A.rows();
-    MatrixXf C(N, N);
+    MatrixXf C = MatrixXf::Zero(N, N);
+    C = strassen_helper(A, B);
 
-    //TODO: Point (e)
+
+
 
     return C;
 }
 
 int main() {
-//    const int rows = 2;
-//    const int cols = 2;
-//    MatrixXf A(rows, cols);
-//    A << 1., 2., 3.,
-//            4., 5.;
-//
-//    MatrixXf B(rows, cols);
-//    B << 1., 2., 3.,
-//            4., 5.;
-//
-//    mult(A, B);
 
 
     srand(time(0));
@@ -113,5 +167,5 @@ int main() {
              << std::chrono::duration_cast<std::chrono::duration<double> >
                      (finish - start).count() << setw(20) << (Z.cast<double>() - ans).norm() << "\n\n\n";
     }
-
 }
+
